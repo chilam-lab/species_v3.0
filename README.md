@@ -95,6 +95,20 @@ uno para cada mes del año.
 
 ### Propuesta de endpoints
 
+
+**Get** `/info`
+
+Obtener metainformación de la fuente de datos.
+
+Regresa
+
+| Campo           | Tipo       | Descripción                                    |
+|-----|----|----|
+| name            | string     | Nombre de la fuente de datos                   |
+| description     | string.    | Información descriptiva de la fuente de datos. |
+| url_datos.      | string     | URL de los datos que se descargaron para construir la fuente de datos |
+| url_dict        | string     | URL de los diccionarios que se descargaron para construir la fuente de datos |
+
 **GET** `/variables`
 
 Obtener el listado de variables definidas en la fuente de datos 
