@@ -145,6 +145,7 @@ Parámetros
 | q         | str  | Patrón para filtrar los niveles de la variable  | *             |
 | offset    | int  | Número de registros en la búsqueda para escapar | null          |
 | limit     | int  | Número de máximo de niveles en la respuesta     | 10            |
+| grid      | int. | identificador de la malla en la que queremos obtener la información de la variable| null |
 
 Regresa
 
@@ -154,7 +155,16 @@ Un arreglo `json` de tamaño `limit` con las propiedades listadas para cada regi
 |----------|------|------------------------------------------------|
 | id       | id   | Identificador de la variable                   |
 | level_id | id   | Identificador del nivel de valor de la varible |
-| data     | json | Información sobre el nivel de la variable      |
+| metadata | json | Información sobre el nivel de la variable      |
+
+metadata contiene:
+
+| Campo | Tipo. | Descripción |
+|-------|-------|-------------|
+| rango | str   | Etiqueta que describe el rango del bin|
+| bin   | int   | Número de bin que corresponde a este 'nivel'|
+| valor | str   | valor del 'nivel' |
+| valor_desc | str | descripción del valor |
 
 **GET** `/get-data/:id:`
 
