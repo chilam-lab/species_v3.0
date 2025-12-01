@@ -119,9 +119,20 @@ Regresa
 |-----------------|------------|------------------------------------------------|
 | id              | id         | Identificador de la variable                   |
 | name            | string     | Nombre de la variable                          |
-| level_size      | int        | Número de niveles que toma la variable         |
+| level_size      | array[int] | Número de niveles que toma la variable para cada grid          |
 | filter_fields   | array[str] | Campos que acepta la variable para filtrar     |
 | available_grids | array[str] | Listado de mallas disponibles para la variable |
+| metadata        | json       | información contextual de la variable          |
+
+metadata contiene:
+
+| Campo           | Tipo              | Descripción                                                                       |
+|-----------------|-------------------|-----------------------------------------------------------------------------------|
+| description     | str               | Texto que describe el significado de la variable                                  |
+| long_name       | str               | Nombre extendido de la variable                                                   |
+| paths           | array[array[str]] | Las 'rutas' de la variable en las diferentes 'taxonomías' que se le puedan asociar|
+| labels          | array[str]        | Etiquetas ('temas') asociados a la variable                                       |
+
 
 **GET** `/variables/:id:`
 
