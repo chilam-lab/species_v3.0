@@ -121,7 +121,7 @@ Regresa
 | name            | string     | Nombre de la variable                          |
 | level_size      | array[int] | Número de niveles que toma la variable para cada grid          |
 | filter_fields   | array[str] | Campos que acepta la variable para filtrar     |
-| available_grids | array[str] | Listado de mallas disponibles para la variable |
+| available_grids | array[str] | Listado de los ids de las mallas disponibles para la variable |
 | metadata        | json       | información contextual de la variable          |
 
 metadata contiene:
