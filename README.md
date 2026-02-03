@@ -104,10 +104,11 @@ Regresa
 
 | Campo           | Tipo       | Descripción                                    |
 |-----|----|----|
-| name            | string     | Nombre de la fuente de datos                   |
-| description     | string.    | Información descriptiva de la fuente de datos. |
-| url_datos.      | string     | URL de los datos que se descargaron para construir la fuente de datos |
-| url_dict        | string     | URL de los diccionarios que se descargaron para construir la fuente de datos |
+| name            | string     | Nombre de la fuente de datos.                  |
+| description     | string    | Información descriptiva de la fuente de datos. |
+| source_url      | string     | URL de la fuente original. Puede apuntar a un portal institucional, una landing page del conjunto de datos o el sitio donde se aloja la información de origen.|
+| download_url    | string     | URL directa al archivo (ej. .csv, .zip, .json). Debe permitir la descarga del recurso sin intermediarios o navegación adicional. |
+| dict_url        | string     | URL que apunta específicamente a la documentación técnica, metadatos o diccionario de datos que explica la estructura de la información original. |
 
 **GET** `/variables`
 
@@ -119,7 +120,7 @@ Regresa
 |-----------------|------------|------------------------------------------------|
 | id              | id         | Identificador de la variable                   |
 | name            | string     | Nombre de la variable                          |
-| level_size      | array[int] | Número de niveles que toma la variable para cada grid          |
+| level_size      | int        | Número de niveles que toma la variable         |
 | filter_fields   | array[str] | Campos que acepta la variable para filtrar     |
 | available_grids | array[str] | Listado de los ids de las mallas disponibles para la variable |
 | metadata        | json       | información contextual de la variable          |
@@ -130,9 +131,6 @@ metadata contiene:
 |-----------------|-------------------|-----------------------------------------------------------------------------------|
 | description     | str               | Texto que describe el significado de la variable                                  |
 | long_name       | str               | Nombre extendido de la variable                                                   |
-| paths           | array[array[str]] | Las 'rutas' de la variable en las diferentes 'taxonomías' que se le puedan asociar|
-| labels          | array[str]        | Etiquetas ('temas') asociados a la variable                                       |
-
 
 **GET** `/variables/:id:`
 
@@ -145,7 +143,6 @@ Parámetros
 | q         | str  | Patrón para filtrar los niveles de la variable  | *             |
 | offset    | int  | Número de registros en la búsqueda para escapar | null          |
 | limit     | int  | Número de máximo de niveles en la respuesta     | 10            |
-| grid      | int. | identificador de la malla en la que queremos obtener la información de la variable| null |
 
 Regresa
 
@@ -155,16 +152,7 @@ Un arreglo `json` de tamaño `limit` con las propiedades listadas para cada regi
 |----------|------|------------------------------------------------|
 | id       | id   | Identificador de la variable                   |
 | level_id | id   | Identificador del nivel de valor de la varible |
-| metadata | json | Información sobre el nivel de la variable      |
-
-metadata contiene:
-
-| Campo | Tipo. | Descripción |
-|-------|-------|-------------|
-| rango | str   | Etiqueta que describe el rango del bin|
-| bin   | int   | Número de bin que corresponde a este 'nivel'|
-| valor | str   | valor del 'nivel' |
-| valor_desc | str | descripción del valor |
+| data | json | Información sobre el nivel de la variable      |
 
 **GET** `/get-data/:id:`
 
