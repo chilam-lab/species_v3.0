@@ -1,0 +1,464 @@
+openapi: 3.1.2
+
+info:
+  title: Nombre de la fuente de datos
+  version: 0.1.0
+  description: >
+    Descripción de la fuente de datos. En si correponde a la descripción de la
+    API aquí también podría escribirse de donde se obtuevieron los datos que 
+    se presentan aunque no es un texto estructurado.
+  contact:
+    name: Fulano Pérez
+    email: species@conabio.gob.mx
+    # url: https://example.com
+
+# -------------------------------------------------------------------
+# Registro de despliegues
+# -------------------------------------------------------------------
+servers:
+  - url: https://api.dev.example.com/datasource
+    description: Development
+  - url: https://api.staging.example.com/datasource
+    description: Staging
+  - url: https://api.example.com/datasource
+    description: Production
+  - url: https://{custom_host}/datasource
+    description: Custom deployment
+    variables:
+      custom_host:
+        default: localhost:8000
+        description: Host for local or custom deployments
+
+# -------------------------------------------------------------------
+# ENDPOINTS
+# -------------------------------------------------------------------
+paths:
+
+  /info:
+    get:
+      summary: Obtiene los metadatos de la fuente de metadatos
+      description: >
+        Regresa la información de identificación de los datos que se sirven
+        por la datasource. Esto incluye liga a la fuente original, 
+        ligas de descarga y diccionario de datos de la fuente original.
+      operationId: getInfo
+      responses:
+        "200":
+          description: Data source metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataSourceMetadata"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /variables:
+    get:
+      summary: Lista todas las variables
+      description: >
+        Regresa la lista completa de las variables definidas en el datasource, 
+        esto incluye en que mallas está definida y los filtros que acepta cada
+        uno
+      operationId: listVariables
+      responses:
+        "200":
+          description: Arreglo de definiciones de las variables
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Variable"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /variables/{id}:
+    get:
+      summary: Lista los niveles de la variable
+      description: >
+        Regresa la lista paginada de los niveles de valores que toma la variable
+        con identificador `id`. Soporta filtros usando el parámetro `q`.
+      operationId: getVariableLevels
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+        - name: q
+          in: query
+          description: Patrón para el filtrado de los niveles de la variable
+          required: false
+          schema:
+            type: string
+            default: "*"
+        - name: offset
+          in: query
+          description: Número de registros para escapar
+          required: false
+          schema:
+            type: integer
+            nullable: true
+            default: null
+        - name: limit
+          in: query
+          description: Número máximo de niveles para regresar
+          required: false
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 100
+      responses:
+        "200":
+          description: Arreglo paginado de niveles de la variable
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VariableLevel"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    post:
+      summary: Lista los niveles de la variable
+      description: >
+        Equivalente al GET /variables/{id} pero acepta los parámetros de
+        consulta en un JSON en el body. 
+      operationId: queryVariableLevels
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VariableLevelsQuery"
+      responses:
+        "200":
+          description: Arreglo paginado de niveles de la variable
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VariableLevel"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /get-data/{id}:
+    get:
+      summary: Obtiene las celdas donde toma un nivel la variable
+      description: >
+        Regresa las celdas de la malla donde una variable toma el valor de 
+        cierto nivel
+      operationId: getVariableData
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+        - name: grid_id
+          in: query
+          description: Identificador de la malla a usar
+          required: true
+          schema:
+            type: string
+        - name: levels_id
+          in: query
+          description: >
+            Lista separada por comas de los ids de niveles que se quieren
+            obtener
+          required: true
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: false
+        - name: filter_names
+          in: query
+          description: >
+            Lista separada por comas de los filtros para aplicar
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: false
+        - name: filter_values
+          in: query
+          description: >
+            Lista de valores separada por comas de los valores de los filtros para
+          required: false
+          schema:
+            type: array
+            items:
+              oneOf:
+                - type: string
+                - type: number
+                - type: boolean
+          style: form
+          explode: false
+      responses:
+        "200":
+          description: >
+            Arreglo de registros de celdas donde una variable toma el valor de 
+            un nivel.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CellDataRecord"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    post:
+      summary: Obtiene las celdas donde toma un nivel la variable
+      description: >
+        Equivalente a GET /get-data/{id} pero acepta los parametro de consulta
+        como el cuerpo de una petición JSON. Se recomienda cuando se pasan 
+        listas grandes de IDs de niveles o muchos filtros.
+      operationId: queryVariableData
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CellDataQuery"
+      responses:
+        "200":
+          description: Array of spatial data records per level
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CellDataRecord"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+# -------------------------------------------------------------------
+# REUSABLE COMPONENTS
+# -------------------------------------------------------------------
+components:
+
+  parameters:
+    ResourceId:
+      name: id
+      in: path
+      required: true
+      description: Identificador único del recurso
+      schema:
+        type: string
+
+  schemas:
+
+    DataSourceMetadata:
+      type: object
+      required: 
+        - name
+        - description
+        - source_url
+      properties:
+        name:
+          type: string
+          description: Nombre del conjunto de datos
+        description:
+          type: string
+          description: Descripción del conjunto de datos 
+        source_url:
+          type: string
+          format: uri
+          description: >
+            URL de la fuente original de los datos. Puede apuntar a un portal 
+            institucional o un sitios de hospedaje
+        download_url:
+          type: string
+          format: uri
+          description: >
+            Url directo para la descarga del archivo de datos original (e.g. 
+            .csv, .zip, .json)
+        dict_url:
+          type: string
+          format: uri
+          description: >
+            URL del diccionario de datos y metodologías de la fuente de datos
+
+    VariableMetadata:
+      type: object
+      properties:
+        description:
+          type: string
+          description: Texto de la descripción del significado de la variable
+        long_name:
+          type: string
+          description: Nombre extendido de la variable
+
+    Variable:
+      type: object
+      required:
+        - id
+        - name
+        - level_size
+        - filter_fields
+        - available_grids
+        - metadata
+      properties:
+        id:
+          type: string
+          description: Identificador de la variable
+        name:
+          type: string
+          description: Nombre de la variable
+        level_size:
+          type: integer
+          description: Numero de niveles que toma la variable
+        filter_fields:
+          type: array
+          items:
+            type: string
+          description: Campos que acepta la variable para filtrarla
+        available_grids:
+          type: array
+          items:
+            type: string
+          description: IDs de mallas donde se ha definido la variable
+        metadata:
+          $ref: "#/components/schemas/VariableMetadata"
+
+    VariableLevelsQuery:
+      type: object
+      description: Request body equivalent of GET /variables/{id} query parameters
+      properties:
+        q:
+          type: string
+          default: "*"
+          description: Patrón para el filtrado de los niveles de la variable
+        offset:
+          type: integer
+          nullable: true
+          default: null
+          description: Número de registros para escapar
+        limit:
+          type: integer
+          default: 10
+          minimum: 1
+          maximum: 100
+          description: Número máximo de niveles para regresar
+
+    CellDataQuery:
+      type: object
+      description: Request body equivalent of GET /get-data/{id} query parameters
+      required: [grid_id, levels_id]
+      properties:
+        grid_id:
+          type: string
+          description: Identificador de la malla a usar
+        levels_id:
+          type: array
+          items:
+            type: string
+          description: Lista de los ids de niveles que se quieren obtener
+        filter_names:
+          type: array
+          items:
+            type: string
+          description: Lista de los filtros para aplicar
+        filter_values:
+          type: array
+          items:
+            oneOf:
+              - type: string
+              - type: number
+              - type: boolean
+          description: >
+            Lista de valores ordenados de los valores de los filtros para
+            usar. Los valores pueden ser strings, numbers o booleans 
+
+    VariableLevel:
+      type: object
+      required: [id, level_id, data]
+      properties:
+        id:
+          type: string
+          description: Identificador de la variable
+        level_id:
+          type: string
+          description: Identificador del nivel de la variable
+        data:
+          type: object
+          description: Información contextual del nivel de la variable
+          additionalProperties: true
+
+    CellDataRecord:
+      type: object
+      required: [id, grid_id, level_id, cells, n]
+      properties:
+        id:
+          type: string
+          description: Identificador de la variable
+        grid_id:
+          type: string
+          description: Grid identifier used for this record
+        level_id:
+          type: string
+          description: Identifier of the value level
+        cells:
+          type: array
+          items:
+            type: integer
+          description: List of grid cells where the variable takes this level
+        n:
+          type: integer
+          description: Number of cells occupied by this variable level
+
+  responses:
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+    ErrorResponse:
+      description: Standard error envelope
+
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Machine-readable error code
+        message:
+          type: string
+          description: Human-readable explanation
+        details:
+          type: object
+          additionalProperties: true
+          description: Optional additional context
